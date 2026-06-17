@@ -1,0 +1,103 @@
+.header {
+  width: 100%;
+  max-width: 1440px;
+  padding: 40px 80px 24px;
+  display: flex;
+  align-items: center;
+  box-sizing: border-box;
+}
+
+.logo {
+  flex-shrink: 0;
+  width: 106px;
+  display: flex;
+  flex-direction: column;
+  line-height: 1;
+  color: #795f3b;
+  font-family: 'Manrope', sans-serif;
+  user-select: none;
+}
+
+.logoSub {
+  font-weight: 700;
+  font-size: 13px;
+  letter-spacing: 0.04em;
+}
+
+.logoMain {
+  font-weight: 800;
+  font-size: 30px;
+}
+
+.scores {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  align-items: center;
+}
+
+.scoreBox {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 16px 24px;
+  border-radius: 12px;
+  background: rgba(121, 95, 59, 0.08);
+  min-width: 97px;
+}
+
+.bestBox {
+  background: transparent;
+  border: 1px solid #ebd8bc;
+}
+
+.scoreLabel {
+  font-family: 'Manrope', sans-serif;
+  font-weight: 700;
+  font-size: 14px;
+  color: #a38b67;
+  letter-spacing: 0.28px;
+  text-transform: uppercase;
+  line-height: 1;
+  margin-bottom: 6px;
+}
+
+.scoreValue {
+  font-family: 'Manrope', sans-serif;
+  font-weight: 800;
+  font-size: 20px;
+  color: #795f3b;
+  letter-spacing: 0.4px;
+  line-height: 1.2;
+}
+
+.actions {
+  flex-shrink: 0;
+  width: 106px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.newGame {
+  font-family: 'Manrope', sans-serif;
+  font-weight: 700;
+  font-size: 14px;
+  color: white;
+  background: #795f3b;
+  border: none;
+  border-radius: 12px;
+  padding: 10px 16px;
+  cursor: pointer;
+  letter-spacing: 0.28px;
+  white-space: nowrap;
+
+  &:hover {
+    background: #6a5233;
+  }
+
+  &:active {
+    background: #5c4829;
+  }
+}
