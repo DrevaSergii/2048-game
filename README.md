@@ -11,7 +11,6 @@ Combine tiles of the same number to reach **2048**.
 | Input | Action |
 |-------|--------|
 | Arrow keys | Move tiles |
-| Swipe | Move tiles (mobile) |
 
 Tiles with equal values merge when they collide. Each merge adds their sum to your score. The game ends when no moves are left.
 
