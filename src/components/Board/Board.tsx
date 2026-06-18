@@ -1,22 +1,26 @@
 import { FC } from 'react';
+import { TileData } from '../../hooks/gameLogic';
 import { Cell } from './Cell';
 import styles from './Board.module.scss';
 
 type BoardProps = {
-  grid: number[][];
+  tiles: TileData[];
   isOver: boolean;
   onRestart: () => void;
 };
 
-export const Board: FC<BoardProps> = ({ grid, isOver, onRestart }) => {
+export const Board: FC<BoardProps> = ({ tiles, isOver, onRestart }) => {
   return (
     <div className={styles.board}>
       <div className={styles.grid}>
-        {grid.flatMap((row, r) =>
-          row.map((value, c) => (
-            <Cell key={`${r}-${c}`} value={value} />
-          ))
-        )}
+        {Array.from({ length: 16 }, (_, i) => (
+          <div key={i} className={styles.emptyCell} />
+        ))}
+      </div>
+      <div className={styles.tileLayer}>
+        {tiles.map(tile => (
+          <Cell key={tile.id} tile={tile} />
+        ))}
       </div>
       {isOver && (
         <div className={styles.overlay}>

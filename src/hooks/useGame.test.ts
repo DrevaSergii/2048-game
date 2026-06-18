@@ -2,9 +2,9 @@ import { renderHook, act } from '@testing-library/react';
 import { useGame } from './useGame';
 
 // With Math.random() === 0:
-//   spawnTile always picks the first empty cell and spawns value 2
-//   newGame() → [[2,2,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0]]
-//   move('left') merges both 2s → score 4, grid[0][0] = 4
+//   spawnRandomTile always picks the first empty cell and spawns value 2
+//   newGameTiles() → two tiles at (row=0,col=0) and (row=0,col=1), both value 2
+//   move('left') merges both 2s → score 4, merged tile at (row=0,col=0) value 4
 
 describe('useGame', () => {
   beforeEach(() => {
@@ -15,7 +15,7 @@ describe('useGame', () => {
 
   it('starts with exactly 2 tiles', () => {
     const { result } = renderHook(() => useGame());
-    expect(result.current.grid.flat().filter(Boolean)).toHaveLength(2);
+    expect(result.current.tiles).toHaveLength(2);
   });
 
   it('starts with score 0', () => {
@@ -43,40 +43,41 @@ describe('useGame', () => {
 
   it('move left merges equal tiles and increments score', () => {
     const { result } = renderHook(() => useGame());
-    // Initial: [[2,2,0,0],...]
+    // Initial: tiles at (0,0)=2 and (0,1)=2
     act(() => { result.current.move('left'); });
     expect(result.current.score).toBe(4);
-    expect(result.current.grid[0][0]).toBe(4);
+    const merged = result.current.tiles.find(t => t.row === 0 && t.col === 0);
+    expect(merged?.value).toBe(4);
   });
 
   it('no-op move does not change state', () => {
     const { result } = renderHook(() => useGame());
-    // Initial: [[2,2,0,0],...] — moving up changes nothing (both tiles already on top)
-    const gridBefore = result.current.grid;
+    // Initial tiles are both at row=0 — moving up is a no-op (already at top)
+    const tilesBefore = result.current.tiles;
     act(() => { result.current.move('up'); });
     expect(result.current.score).toBe(0);
     expect(result.current.canUndo).toBe(false);
-    expect(result.current.grid).toBe(gridBefore);
+    expect(result.current.tiles).toBe(tilesBefore);
   });
 
-  it('undo reverts grid and score to previous state', () => {
+  it('undo reverts tiles and score to previous state', () => {
     const { result } = renderHook(() => useGame());
-    const gridBefore = result.current.grid;
+    const tilesBefore = result.current.tiles;
 
     act(() => { result.current.move('left'); });
     expect(result.current.score).toBe(4);
 
     act(() => { result.current.undo(); });
     expect(result.current.score).toBe(0);
-    expect(result.current.grid).toEqual(gridBefore);
+    expect(result.current.tiles).toEqual(tilesBefore);
     expect(result.current.canUndo).toBe(false);
   });
 
   it('undo is a no-op when canUndo is false', () => {
     const { result } = renderHook(() => useGame());
-    const gridBefore = result.current.grid;
+    const tilesBefore = result.current.tiles;
     act(() => { result.current.undo(); });
-    expect(result.current.grid).toBe(gridBefore);
+    expect(result.current.tiles).toBe(tilesBefore);
   });
 
   it('reset clears score and canUndo', () => {

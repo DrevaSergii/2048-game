@@ -1,4 +1,10 @@
-import { emptyGrid, spawnTile, newGame, slideLeft, transpose, flipH, applyMove, hasMove } from './gameLogic';
+import {
+  emptyGrid, spawnTile, newGame, slideLeft, transpose, flipH, applyMove, hasMove,
+  newGameTiles, spawnRandomTile, applyMoveWithTiles, hasMoveTiles,
+} from './gameLogic';
+import type { TileData } from './gameLogic';
+
+// ─── legacy Grid-based tests ─────────────────────────────────────────────────
 
 describe('emptyGrid', () => {
   it('returns 4×4 grid of zeros', () => {
@@ -223,5 +229,184 @@ describe('hasMove', () => {
       [4, 2, 4, 2],
     ];
     expect(hasMove(g)).toBe(false);
+  });
+});
+
+// ─── TileData-based tests ─────────────────────────────────────────────────────
+
+const tile = (id: number, value: number, row: number, col: number): TileData => ({
+  id, value, row, col, isNew: false, isMerged: false,
+});
+
+describe('spawnRandomTile', () => {
+  afterEach(() => jest.restoreAllMocks());
+
+  it('adds one tile to an empty array', () => {
+    jest.spyOn(Math, 'random').mockReturnValue(0);
+    expect(spawnRandomTile([])).toHaveLength(1);
+  });
+
+  it('spawns value 2 when random < 0.9', () => {
+    jest.spyOn(Math, 'random').mockReturnValue(0);
+    expect(spawnRandomTile([])[0].value).toBe(2);
+  });
+
+  it('spawns value 4 when random >= 0.9', () => {
+    jest.spyOn(Math, 'random').mockReturnValueOnce(0).mockReturnValueOnce(0.95);
+    expect(spawnRandomTile([])[0].value).toBe(4);
+  });
+
+  it('sets isNew=true on the spawned tile', () => {
+    jest.spyOn(Math, 'random').mockReturnValue(0);
+    expect(spawnRandomTile([])[0].isNew).toBe(true);
+  });
+
+  it('does not spawn on an occupied cell', () => {
+    jest.spyOn(Math, 'random').mockReturnValue(0);
+    const existing = [tile(1, 2, 0, 0)];
+    const result = spawnRandomTile(existing);
+    expect(result).toHaveLength(2);
+    expect(result.find(t => t.row === 0 && t.col === 0)?.value).toBe(2);
+  });
+
+  it('returns unchanged array when grid is full', () => {
+    const full: TileData[] = [];
+    for (let r = 0; r < 4; r++)
+      for (let c = 0; c < 4; c++)
+        full.push(tile(r * 4 + c + 1, 2, r, c));
+    expect(spawnRandomTile(full)).toEqual(full);
+  });
+});
+
+describe('newGameTiles', () => {
+  afterEach(() => jest.restoreAllMocks());
+
+  it('returns exactly 2 tiles', () => {
+    jest.spyOn(Math, 'random').mockReturnValue(0);
+    expect(newGameTiles()).toHaveLength(2);
+  });
+
+  it('all tiles have value 2 or 4', () => {
+    jest.spyOn(Math, 'random').mockReturnValue(0);
+    newGameTiles().forEach(t => expect([2, 4]).toContain(t.value));
+  });
+});
+
+describe('applyMoveWithTiles', () => {
+  it('moves tile left', () => {
+    const tiles = [tile(1, 2, 0, 3)];
+    const { tiles: result, changed } = applyMoveWithTiles(tiles, 'left');
+    expect(result.find(t => t.value === 2)?.col).toBe(0);
+    expect(changed).toBe(true);
+  });
+
+  it('moves tile right', () => {
+    const tiles = [tile(1, 2, 0, 0)];
+    const { tiles: result, changed } = applyMoveWithTiles(tiles, 'right');
+    expect(result.find(t => t.value === 2)?.col).toBe(3);
+    expect(changed).toBe(true);
+  });
+
+  it('moves tile up', () => {
+    const tiles = [tile(1, 2, 3, 0)];
+    const { tiles: result, changed } = applyMoveWithTiles(tiles, 'up');
+    expect(result.find(t => t.value === 2)?.row).toBe(0);
+    expect(changed).toBe(true);
+  });
+
+  it('moves tile down', () => {
+    const tiles = [tile(1, 2, 0, 0)];
+    const { tiles: result, changed } = applyMoveWithTiles(tiles, 'down');
+    expect(result.find(t => t.value === 2)?.row).toBe(3);
+    expect(changed).toBe(true);
+  });
+
+  it('merges equal tiles and returns gained score', () => {
+    const tiles = [tile(1, 2, 0, 0), tile(2, 2, 0, 1)];
+    const { tiles: result, gained, changed } = applyMoveWithTiles(tiles, 'left');
+    expect(result).toHaveLength(1);
+    expect(result[0].value).toBe(4);
+    expect(result[0].isMerged).toBe(true);
+    expect(gained).toBe(4);
+    expect(changed).toBe(true);
+  });
+
+  it('reports changed=false when nothing moves', () => {
+    const tiles = [tile(1, 2, 0, 0), tile(2, 4, 0, 1), tile(3, 8, 0, 2), tile(4, 16, 0, 3)];
+    expect(applyMoveWithTiles(tiles, 'left').changed).toBe(false);
+  });
+
+  it('accumulates score from multiple merges', () => {
+    const tiles = [
+      tile(1, 2, 0, 0), tile(2, 2, 0, 1),
+      tile(3, 4, 0, 2), tile(4, 4, 0, 3),
+    ];
+    const { gained } = applyMoveWithTiles(tiles, 'left');
+    expect(gained).toBe(12); // 4 + 8
+  });
+
+  it('preserves tile ID for unmoved tiles', () => {
+    const tiles = [tile(99, 2, 0, 1)];
+    const { tiles: result } = applyMoveWithTiles(tiles, 'left');
+    expect(result[0].id).toBe(99);
+  });
+
+  it('clears isNew and isMerged flags on existing tiles', () => {
+    const tiles = [{ ...tile(1, 2, 0, 1), isNew: true, isMerged: true }];
+    const { tiles: result } = applyMoveWithTiles(tiles, 'left');
+    expect(result[0].isNew).toBe(false);
+    expect(result[0].isMerged).toBe(false);
+  });
+});
+
+describe('hasMoveTiles', () => {
+  it('returns true when empty cells exist', () => {
+    const tiles = [tile(1, 2, 0, 0)];
+    expect(hasMoveTiles(tiles)).toBe(true);
+  });
+
+  it('returns true when horizontal merge possible', () => {
+    const full: TileData[] = [];
+    let id = 1;
+    const vals = [
+      [2, 2, 4, 8],
+      [4, 8, 16, 32],
+      [8, 16, 32, 64],
+      [16, 32, 64, 128],
+    ];
+    for (let r = 0; r < 4; r++)
+      for (let c = 0; c < 4; c++)
+        full.push(tile(id++, vals[r][c], r, c));
+    expect(hasMoveTiles(full)).toBe(true);
+  });
+
+  it('returns true when vertical merge possible', () => {
+    const full: TileData[] = [];
+    let id = 1;
+    const vals = [
+      [2, 4, 8, 16],
+      [2, 8, 16, 32],
+      [4, 16, 32, 64],
+      [8, 32, 64, 128],
+    ];
+    for (let r = 0; r < 4; r++)
+      for (let c = 0; c < 4; c++)
+        full.push(tile(id++, vals[r][c], r, c));
+    expect(hasMoveTiles(full)).toBe(true);
+  });
+
+  it('returns false when no moves possible', () => {
+    const full: TileData[] = [];
+    let id = 1;
+    const vals = [
+      [2, 4, 2, 4],
+      [4, 2, 4, 2],
+      [2, 4, 2, 4],
+      [4, 2, 4, 2],
+    ];
+    for (let r = 0; r < 4; r++)
+      for (let c = 0; c < 4; c++)
+        full.push(tile(id++, vals[r][c], r, c));
+    expect(hasMoveTiles(full)).toBe(false);
   });
 });

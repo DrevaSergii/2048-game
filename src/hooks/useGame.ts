@@ -1,15 +1,15 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Grid, Direction, newGame, spawnTile, applyMove, hasMove } from './gameLogic';
+import { TileData, Direction, newGameTiles, spawnRandomTile, applyMoveWithTiles, hasMoveTiles } from './gameLogic';
 
 export type { Direction };
 
 type UndoSnapshot = {
-  grid: Grid;
+  tiles: TileData[];
   score: number;
 };
 
 export interface GameAPI {
-  grid: Grid;
+  tiles: TileData[];
   score: number;
   best: number;
   isOver: boolean;
@@ -20,7 +20,7 @@ export interface GameAPI {
 }
 
 export function useGame(): GameAPI {
-  const [grid, setGrid] = useState<Grid>(newGame);
+  const [tiles, setTiles] = useState<TileData[]>(newGameTiles);
   const [score, setScore] = useState(0);
   const [best, setBest] = useState(() => parseInt(localStorage.getItem('2048best') || '0', 10));
   const [undoSnapshot, setUndoSnapshot] = useState<UndoSnapshot | null>(null);
@@ -29,23 +29,23 @@ export function useGame(): GameAPI {
   const move = useCallback((dir: Direction) => {
     if (isOver) return;
 
-    const { grid: next, gained, changed } = applyMove(grid, dir);
+    const { tiles: next, gained, changed } = applyMoveWithTiles(tiles, dir);
     if (!changed) return;
 
-    const spawned = spawnTile(next);
+    const spawned = spawnRandomTile(next);
     const newScore = score + gained;
     const newBest = Math.max(best, newScore);
 
-    setUndoSnapshot({ grid, score });
-    setGrid(spawned);
+    setUndoSnapshot({ tiles, score });
+    setTiles(spawned);
     setScore(newScore);
     setBest(newBest);
     if (newBest > best) localStorage.setItem('2048best', String(newBest));
-    if (!hasMove(spawned)) setIsOver(true);
-  }, [grid, score, best, isOver]);
+    if (!hasMoveTiles(spawned)) setIsOver(true);
+  }, [tiles, score, best, isOver]);
 
   const reset = useCallback(() => {
-    setGrid(newGame());
+    setTiles(newGameTiles());
     setScore(0);
     setUndoSnapshot(null);
     setIsOver(false);
@@ -53,7 +53,7 @@ export function useGame(): GameAPI {
 
   const undo = useCallback(() => {
     if (!undoSnapshot) return;
-    setGrid(undoSnapshot.grid);
+    setTiles(undoSnapshot.tiles);
     setScore(undoSnapshot.score);
     setUndoSnapshot(null);
     setIsOver(false);
@@ -79,5 +79,5 @@ export function useGame(): GameAPI {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [move]);
 
-  return { grid, score, best, isOver, canUndo: !!undoSnapshot, move, reset, undo };
+  return { tiles, score, best, isOver, canUndo: !!undoSnapshot, move, reset, undo };
 }
