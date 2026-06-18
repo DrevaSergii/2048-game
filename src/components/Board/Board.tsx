@@ -4,19 +4,21 @@ import styles from './Board.module.scss';
 
 type BoardProps = {
   grid: number[][];
-  over: boolean;
+  isOver: boolean;
   onRestart: () => void;
 };
 
-export const Board: FC<BoardProps> = ({ grid, over, onRestart }) => {
+export const Board: FC<BoardProps> = ({ grid, isOver, onRestart }) => {
   return (
     <div className={styles.board}>
       <div className={styles.grid}>
-        {grid.flat().map((value, i) => (
-          <Cell key={i} value={value} />
-        ))}
+        {grid.flatMap((row, r) =>
+          row.map((value, c) => (
+            <Cell key={`${r}-${c}`} value={value} />
+          ))
+        )}
       </div>
-      {over && (
+      {isOver && (
         <div className={styles.overlay}>
           <p className={styles.overlayTitle}>Game Over</p>
           <button className={styles.overlayButton} onClick={onRestart}>

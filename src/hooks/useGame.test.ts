@@ -25,7 +25,7 @@ describe('useGame', () => {
 
   it('starts not over and without undo', () => {
     const { result } = renderHook(() => useGame());
-    expect(result.current.over).toBe(false);
+    expect(result.current.isOver).toBe(false);
     expect(result.current.canUndo).toBe(false);
   });
 
@@ -85,7 +85,7 @@ describe('useGame', () => {
     act(() => { result.current.reset(); });
     expect(result.current.score).toBe(0);
     expect(result.current.canUndo).toBe(false);
-    expect(result.current.over).toBe(false);
+    expect(result.current.isOver).toBe(false);
   });
 
   it('reset preserves best score', () => {
